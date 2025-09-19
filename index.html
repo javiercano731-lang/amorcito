@@ -19,6 +19,7 @@
       font-size: 2.5em;
       color: #ff9ff3;
       text-shadow: 0 0 15px #f368e0;
+      z-index: 10;
     }
     h2 {
       position: absolute;
@@ -26,6 +27,7 @@
       width: 100%;
       font-size: 1.5em;
       color: #c8d6e5;
+      z-index: 10;
     }
     canvas {
       display: block;
@@ -40,11 +42,27 @@
     const canvas = document.getElementById('galaxy');
     const ctx = canvas.getContext('2d');
     let stars = [];
+    let hearts = [];
+    let words = [];
+
+    const frases = [
+      "Eres mi estrella 🌟",
+      "Mi universo favorito 💕",
+      "Contigo todo brilla ✨",
+      "Mi sol en la oscuridad ☀️",
+      "Te pienso siempre 💭",
+      "Mi lugar seguro 🏡",
+      "Eres mi todo 💖",
+      "Mi razón de sonreír 😊",
+      "Siempre tú 💫",
+      "Te amo infinito ♾️"
+    ];
 
     function resize() {
       canvas.width = window.innerWidth;
       canvas.height = window.innerHeight;
       stars = [];
+      words = [];
       for (let i = 0; i < 400; i++) {
         stars.push({
           x: Math.random() * canvas.width,
@@ -53,12 +71,20 @@
           d: Math.random() * 0.5
         });
       }
+      for (let i = 0; i < frases.length; i++) {
+        words.push({
+          text: frases[i],
+          x: Math.random() * canvas.width,
+          y: Math.random() * canvas.height,
+          alpha: 1,
+          dir: Math.random() > 0.5 ? 1 : -1
+        });
+      }
     }
     window.onresize = resize;
     resize();
 
-    function draw() {
-      ctx.clearRect(0,0,canvas.width,canvas.height);
+    function drawStars() {
       ctx.fillStyle = "white";
       ctx.beginPath();
       for (let s of stars) {
@@ -66,10 +92,9 @@
         ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2, true);
       }
       ctx.fill();
-      update();
     }
 
-    function update() {
+    function updateStars() {
       for (let s of stars) {
         s.y += s.d;
         if (s.y > canvas.height) {
@@ -79,11 +104,69 @@
       }
     }
 
+    function drawHearts() {
+      for (let i = 0; i < hearts.length; i++) {
+        let h = hearts[i];
+        ctx.save();
+        ctx.translate(h.x, h.y);
+        ctx.scale(h.size, h.size);
+        ctx.fillStyle = `rgba(255,105,180,${h.alpha})`;
+        ctx.beginPath();
+        ctx.moveTo(0, -10);
+        ctx.bezierCurveTo(10, -20, 25, -5, 0, 15);
+        ctx.bezierCurveTo(-25, -5, -10, -20, 0, -10);
+        ctx.fill();
+        ctx.restore();
+        h.y -= 1;
+        h.alpha -= 0.01;
+        if (h.alpha <= 0) {
+          hearts.splice(i, 1);
+          i--;
+        }
+      }
+    }
+
+    function drawWords() {
+      ctx.font = "20px Courier New";
+      ctx.textAlign = "center";
+      for (let w of words) {
+        ctx.fillStyle = `rgba(255, 192, 203, ${w.alpha})`;
+        ctx.fillText(w.text, w.x, w.y);
+        w.y += 0.2 * w.dir;
+        if (w.y < 0) w.y = canvas.height;
+        if (w.y > canvas.height) w.y = 0;
+      }
+    }
+
     function animate() {
-      draw();
+      ctx.clearRect(0,0,canvas.width,canvas.height);
+      drawStars();
+      updateStars();
+      drawHearts();
+      drawWords();
       requestAnimationFrame(animate);
     }
     animate();
+
+    // Evento para crear corazones
+    canvas.addEventListener("click", e => {
+      hearts.push({
+        x: e.clientX,
+        y: e.clientY,
+        size: 1 + Math.random()*1.5,
+        alpha: 1
+      });
+    });
+
+    canvas.addEventListener("touchstart", e => {
+      let touch = e.touches[0];
+      hearts.push({
+        x: touch.clientX,
+        y: touch.clientY,
+        size: 1 + Math.random()*1.5,
+        alpha: 1
+      });
+    });
   </script>
 </body>
 </html>
