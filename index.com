@@ -1,0 +1,291 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Galaxia para Laura ✨</title>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg1: #03010a;
+    --bg2: #0b0530;
+    --accent: #ff6fa3;
+  }
+  html,body{height:100%;margin:0;font-family:"Poppins",system-ui,Arial, sans-serif;background: radial-gradient(ellipse at 20% 10%, #0b0330 0%, var(--bg1) 40%, var(--bg2) 100%); color:#fff; overflow:hidden;}
+  #container{position:fixed;inset:0;touch-action:none;}
+  canvas{display:block;width:100%;height:100%;}
+  #centerName{
+    position: absolute;
+    left:50%;
+    top:50%;
+    transform: translate(-50%,-50%);
+    z-index: 20;
+    pointer-events: none;
+    text-align:center;
+    color: #fff;
+    font-weight:700;
+    letter-spacing: 1px;
+    font-size: clamp(28px, 5vw, 64px);
+    text-shadow:
+      0 0 6px rgba(255,111,163,0.8),
+      0 0 18px rgba(255,111,163,0.4),
+      0 10px 30px rgba(0,0,0,0.6);
+  }
+  #centerSub{
+    display:block;
+    font-size: clamp(12px, 1.6vw, 18px);
+    font-weight:500;
+    margin-top:6px;
+    color: rgba(255,255,255,0.9);
+    text-shadow: none;
+  }
+  #hint {
+    position: absolute;
+    left: 16px;
+    top: 14px;
+    z-index: 20;
+    background: rgba(0,0,0,0.25);
+    padding: 8px 10px;
+    border-radius: 10px;
+    font-size: 13px;
+    color: rgba(255,255,255,0.92);
+    backdrop-filter: blur(4px);
+    border: 1px solid rgba(255,255,255,0.03);
+  }
+  #fallback {
+    position: absolute;
+    inset: 0;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index:30;
+    text-align:center;
+    padding:20px;
+    background: linear-gradient(180deg, rgba(0,0,0,0.5), rgba(0,0,0,0.6));
+    color:#fff;
+    font-size:16px;
+  }
+</style>
+</head>
+<body>
+  <div id="container"></div>
+
+  <div id="centerName">✨ Laura ✨<span id="centerSub">mi persona favorita</span></div>
+
+  <div id="hint">Mueve con el dedo o arrastra con el ratón • Acerca para ver más palabras</div>
+  <div id="fallback">Tu navegador no soporta WebGL. Prueba actualizar el navegador o abrir en Chrome/Firefox.</div>
+
+  <script src="https://cdn.jsdelivr.net/npm/three@0.152.2/build/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.152.2/examples/js/controls/OrbitControls.js"></script>
+
+  <script>
+  (function(){
+    const CENTER_NAME = "✨ LAURA ✨";
+    const CENTER_SUB = "mi persona favorita";
+    const WORD_COUNT = 2500;
+    const PHRASES = [
+      "Amor 💖","Mi cielo 🌌","Eres única ✨","Mi vida 🌹","Te adoro 💕",
+      "Mi estrella 🌟","Eres mi todo 💘","Mi luz 🔥","Corazón ❤️","Mi razón 🌹",
+      "Mi alegría 🥰","Tesoro 💎","Mi reina 👑","Sueño 💭","Futuro 💍",
+      "Siempre tú 🌙","Mi princesa 👸","Mi ternura 🍯","Contigo ✨","Por siempre 💫",
+      "Eres mi paz 🌊","Tu risa 🎶","Mi felicidad 🌞","Mi ángel 😇","Mi ilusión 🌈",
+      "Eres magia ✨","Mi destino 💍","Mi sol ☀️","Mi luna 🌙","Mi fortuna 🍀",
+      "Mi caricia 🤲","Mi sonrisa 😍","Mi corazón ❤️","Mi tesoro 💎","Mi mundo 🌎",
+      "Eres arte 🎨","Mi melodía 🎶","Mi sueño cumplido 💭","Mi vida entera 💕",
+      "Mi ternura 🐻","Mi chispa 🔥","Eres todo 💖","Mi paz 🌸","Mi flor 🌹",
+      "Mi luz del alma ✨","Mi princesa hermosa 👑","Eres perfecta 💎","Mi inspiración 🎇",
+      "Mi regalo 🎁","Mi todo infinito ♾️","Mi encanto 💫","Mi niña bonita 🌸"
+    ];
+    const TEXT_COLORS = ["#ffffff","#ffe7f2","#ffd7ea","#ffb3da","#ffd27f"];
+    const MIN_RADIUS = 180;
+    const MAX_RADIUS = 1200;
+    const TEXT_BASE_FONT = "Poppins, system-ui, Arial";
+
+    const container = document.getElementById('container');
+    const fallback = document.getElementById('fallback');
+    if (!window.WebGLRenderingContext) {
+      fallback.style.display = "flex";
+      fallback.textContent = "Este dispositivo no soporta WebGL necesario para ver la galaxia. Intenta en otro navegador o PC.";
+      return;
+    }
+
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(60, innerWidth/innerHeight, 1, 4000);
+    const renderer = new THREE.WebGLRenderer({antialias:true, alpha:true});
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+    renderer.setSize(innerWidth, innerHeight);
+    container.appendChild(renderer.domElement);
+
+    const controls = new THREE.OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true;
+    controls.dampingFactor = 0.08;
+    controls.rotateSpeed = 0.6;
+    controls.zoomSpeed = 1.2;
+    controls.minDistance = 220;
+    controls.maxDistance = 3000;
+
+    camera.position.set(0, 200, 1100);
+    controls.update();
+
+    scene.add(new THREE.AmbientLight(0xffffff, 0.45));
+
+    const sunLight = new THREE.PointLight(0xffc08e, 1.6, 3000, 2);
+    sunLight.position.set(0,0,0);
+    scene.add(sunLight);
+
+    const sunGeo = new THREE.SphereGeometry(60, 32, 32);
+    const sunMat = new THREE.MeshBasicMaterial({ color: 0xffb3d9 });
+    const sunMesh = new THREE.Mesh(sunGeo, sunMat);
+    scene.add(sunMesh);
+
+    const haloCanvas = document.createElement('canvas');
+    haloCanvas.width = haloCanvas.height = 256;
+    const hCtx = haloCanvas.getContext('2d');
+    const grad = hCtx.createRadialGradient(128,128,10,128,128,128);
+    grad.addColorStop(0, 'rgba(255,111,163,0.95)');
+    grad.addColorStop(0.25, 'rgba(255,111,163,0.55)');
+    grad.addColorStop(1, 'rgba(255,111,163,0)');
+    hCtx.fillStyle = grad;
+    hCtx.fillRect(0,0,256,256);
+    const haloTex = new THREE.CanvasTexture(haloCanvas);
+    const haloMat = new THREE.SpriteMaterial({ map: haloTex, transparent:true, depthWrite:false });
+    const halo = new THREE.Sprite(haloMat);
+    halo.scale.set(550,550,1);
+    halo.position.set(0,0,-20);
+    scene.add(halo);
+
+    const textureCache = new Map();
+    function createTextTexture(text, color = "#fff", fontSize = 64, padding = 18){
+      const key = text + '|' + color + '|' + fontSize;
+      if (textureCache.has(key)) return textureCache.get(key);
+      const dpr = Math.max(1, Math.floor(window.devicePixelRatio || 1));
+      const m = document.createElement('canvas');
+      const mc = m.getContext('2d');
+      mc.font = `${fontSize}px ${TEXT_BASE_FONT}`;
+      const measured = mc.measureText(text);
+      const w = Math.ceil(measured.width) + padding*2;
+      const h = Math.ceil(fontSize) + padding*2;
+      const canvas = document.createElement('canvas');
+      canvas.width = w * dpr;
+      canvas.height = h * dpr;
+      const ctx2 = canvas.getContext('2d');
+      ctx2.scale(dpr, dpr);
+      ctx2.font = `${fontSize}px ${TEXT_BASE_FONT}`;
+      ctx2.textBaseline = 'middle';
+      const x = padding;
+      const y = h/2;
+      ctx2.lineWidth = Math.max(2, fontSize * 0.07);
+      ctx2.strokeStyle = 'rgba(0,0,0,0.45)';
+      ctx2.strokeText(text, x, y);
+      const g = ctx2.createLinearGradient(0,0,w,0);
+      g.addColorStop(0, color);
+      g.addColorStop(1, '#ffffff');
+      ctx2.fillStyle = g;
+      ctx2.fillText(text, x, y);
+      const tex = new THREE.CanvasTexture(canvas);
+      tex.minFilter = THREE.LinearFilter;
+      tex.needsUpdate = true;
+      const data = { tex, w, h };
+      textureCache.set(key, data);
+      return data;
+    }
+
+    const sprites = [];
+    function spawnWords(count = WORD_COUNT){
+      const unique = [...new Set(PHRASES)];
+      const mats = {};
+      for (let p of unique){
+        const color = TEXT_COLORS[Math.floor(Math.random()*TEXT_COLORS.length)];
+        const info = createTextTexture(p, color, 48, 12);
+        mats[p] = new THREE.SpriteMaterial({ map: info.tex, transparent: true, depthWrite: false });
+      }
+      for(let i=0;i<count;i++){
+        const phrase = PHRASES[Math.floor(Math.random()*PHRASES.length)];
+        const mat = mats[phrase];
+        const sprite = new THREE.Sprite(mat);
+        const u = Math.random();
+        const r = MIN_RADIUS + (Math.pow(u,0.6) * (MAX_RADIUS - MIN_RADIUS));
+        const theta = Math.random() * Math.PI * 2;
+        const phi = Math.acos((Math.random()*2)-1);
+        sprite.position.set(
+          r * Math.sin(phi) * Math.cos(theta),
+          r * Math.sin(phi) * Math.sin(theta),
+          r * Math.cos(phi)
+        );
+        const baseScale = (mat.map.image.width / (window.devicePixelRatio || 1)) * 0.06 * (0.6 + Math.random()*0.8);
+        sprite.scale.set(baseScale, baseScale * (mat.map.image.height/mat.map.image.width), 1);
+        sprite.material.rotation = Math.random() * Math.PI * 2;
+        sprite.userData.baseScale = baseScale;
+        sprites.push(sprite);
+        scene.add(sprite);
+      }
+    }
+    spawnWords(WORD_COUNT);
+
+    function createCenterLabel(text){
+      const info = createTextTexture(text, "#fff", 96, 24);
+      const material = new THREE.SpriteMaterial({ map: info.tex, transparent:true, depthWrite: false });
+      const sprite = new THREE.Sprite(material);
+      const scale = (info.w / (window.devicePixelRatio || 1)) * 0.12;
+      sprite.scale.set(scale, scale * (info.h/info.w), 1.0);
+      sprite.position.set(0,0,20);
+      sprite.userData.baseScale = scale;
+      scene.add(sprite);
+      return sprite;
+    }
+    const centerLabel = createCenterLabel(CENTER_NAME);
+
+    const centerDiv = document.getElementById('centerName');
+    const centerSub = document.getElementById('centerSub');
+    centerDiv.textContent = CENTER_NAME;
+    centerSub.textContent = CENTER_SUB;
+
+    let frame = 0;
+    function animate(){
+      frame++;
+      requestAnimationFrame(animate);
+
+      if (!controls.userIsInteracting && !controls.dragging) {
+        scene.rotation.y += 0.0008;
+      }
+
+      const camPos = camera.position;
+      for (let i=0;i<sprites.length;i++){
+        const s = sprites[i];
+        const d = camPos.distanceTo(s.position);
+        const f = THREE.MathUtils.clamp( (1200 / d), 0.25, 2.2 );
+        const targetScale = s.userData.baseScale * f;
+        s.scale.x += (targetScale - s.scale.x) * 0.16;
+        s.scale.y += (targetScale * (s.material.map.image.height/s.material.map.image.width) - s.scale.y) * 0.16;
+        const opacity = THREE.MathUtils.clamp(1.6 - (d / 900), 0.08, 1.0);
+        s.material.opacity += (opacity - s.material.opacity) * 0.12;
+      }
+
+      // efecto de latido en el nombre central
+      const pulse = 1 + Math.sin(frame * 0.05) * 0.06;
+      centerLabel.scale.set(
+        centerLabel.userData.baseScale * pulse,
+        centerLabel.userData.baseScale * pulse * (centerLabel.scale.y / centerLabel.scale.x),
+        1
+      );
+
+      controls.update();
+      renderer.render(scene, camera);
+    }
+    animate();
+
+    window.addEventListener('resize', ()=>{
+      renderer.setSize(innerWidth, innerHeight);
+      camera.aspect = innerWidth/innerHeight;
+      camera.updateProjectionMatrix();
+    }, {passive:true});
+
+    let hint = document.getElementById('hint');
+    function removeHint(){
+      if (hint){ hint.style.display = 'none'; hint = null; }
+    }
+    renderer.domElement.addEventListener('pointerdown', removeHint, {passive:true});
+  })();
+  </script>
+</body>
+</html>
