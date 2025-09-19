@@ -2,95 +2,146 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <title>✨ Galaxia de Laura ✨</title>
+  <title>Juego Romántico para Laura 💕</title>
   <style>
-    body {margin:0; overflow:hidden; background:black;}
-    canvas {display:block;}
+    body {
+      margin: 0;
+      overflow: hidden;
+      background: linear-gradient(to bottom, #0d0d2b, #1a0033);
+      color: white;
+      font-family: Arial, sans-serif;
+      user-select: none;
+      touch-action: none;
+    }
+    #mensaje {
+      position: absolute;
+      top: 20px;
+      width: 100%;
+      text-align: center;
+      font-size: 24px;
+      font-weight: bold;
+      color: #ff99cc;
+      text-shadow: 0 0 10px #ff66b2;
+    }
+    canvas {
+      display: block;
+    }
   </style>
 </head>
 <body>
-  <script src="https://cdn.jsdelivr.net/npm/three@0.152.2/build/three.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/three@0.152.2/examples/js/controls/OrbitControls.js"></script>
+  <div id="mensaje">✨ Atrapa las palabras bonitas ✨</div>
+  <canvas id="juego"></canvas>
   <script>
-    // Frases románticas 💕 (ponemos varias y luego se repiten hasta llegar a 1000)
+    const canvas = document.getElementById("juego");
+    const ctx = canvas.getContext("2d");
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+
+    // Mensajes románticos 💕
     const frases = [
-      "Mi estrella 🌟","Eres mi universo 💕","Mi razón de sonreír 😊",
-      "Siempre tú 💫","Mi vida 🌹","Mi sol ☀️","Mi tesoro 💎","Eres mi todo 💖",
-      "Mi alegría 🥰","Mi reina 👑","Mi princesa 👸","Mi ternura 🍯",
-      "Mi cielo 🌌","Te adoro 💕","Mi futuro 💍","Mi lugar seguro 🏡",
-      "Mi corazón ❤️","Mi sueño ✨","Mi poesía 📖","Mi ángel 😇","Mi fortuna 🍀",
-      "Mi ilusión 🌈","Mi calma 🍃","Mi deseo 🔥","Mi aventura 🚀","Mi paz 🕊️",
-      "Mi magia 🪄","Mi regalo 🎁","Mi sonrisa favorita 😍","Mi refugio 🛡️"
+      "Eres mi sol ☀️", "Mi universo 🌌", "Mi alegría 🥰", "Mi tesoro 💎",
+      "Mi razón de sonreír 😊", "Siempre tú 💫", "Mi vida 🌹", "Mi reina 👑",
+      "Te adoro 💕", "Mi ternura 🍯", "Mi lugar seguro 🏡", "Mi princesa 👸",
+      "Mi futuro 💍", "Mi ángel 😇", "Mi calma 🍃", "Mi regalo 🎁",
+      "Mi magia 🪄", "Mi sonrisa favorita 😍", "Mi refugio 🛡️", "Mi poesía 📖"
     ];
 
-    // Repetimos hasta 1000 frases
-    let todas = [];
-    for (let i=0; i<1000; i++) {
-      todas.push(frases[i % frases.length]);
+    // Corazón (jugador)
+    const corazon = { x: canvas.width / 2, y: canvas.height / 2, size: 30 };
+
+    // Palabras flotando
+    let palabras = [];
+    function crearPalabras() {
+      for (let i = 0; i < 15; i++) {
+        palabras.push({
+          texto: frases[Math.floor(Math.random() * frases.length)],
+          x: Math.random() * canvas.width,
+          y: Math.random() * canvas.height,
+          dx: (Math.random() - 0.5) * 2,
+          dy: (Math.random() - 0.5) * 2
+        });
+      }
+    }
+    crearPalabras();
+
+    // Dibujar corazón
+    function dibujarCorazon(x, y, size) {
+      ctx.save();
+      ctx.translate(x, y);
+      ctx.beginPath();
+      ctx.moveTo(0, -size/2);
+      ctx.bezierCurveTo(size/2, -size, size, 0, 0, size);
+      ctx.bezierCurveTo(-size, 0, -size/2, -size, 0, -size/2);
+      ctx.fillStyle = "#ff3366";
+      ctx.fill();
+      ctx.restore();
     }
 
-    // Escena
-    const scene = new THREE.Scene();
-    const camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 5000);
-    camera.position.z = 800;
-
-    const renderer = new THREE.WebGLRenderer({antialias:true});
-    renderer.setSize(window.innerWidth, window.innerHeight);
-    document.body.appendChild(renderer.domElement);
-
-    const controls = new THREE.OrbitControls(camera, renderer.domElement);
-    controls.enableDamping = true;
-
-    // Colores de galaxia
-    const colores = ["#ff69b4","#9370db","#87cefa","#ffffff"]; // rosa, morado, azul, blanco
-
-    // Función para crear textura de texto
-    function crearTexto(texto, color="#fff") {
-      const canvas = document.createElement("canvas");
-      const ctx = canvas.getContext("2d");
-      ctx.font = "32px Arial";
-      const w = ctx.measureText(texto).width + 20;
-      const h = 40;
-      canvas.width = w;
-      canvas.height = h;
-      ctx.font = "32px Arial";
-      ctx.fillStyle = color;
-      ctx.fillText(texto, 10, 30);
-      const tex = new THREE.CanvasTexture(canvas);
-      return new THREE.SpriteMaterial({map: tex, transparent:true});
+    // Mensaje
+    const mensajeDiv = document.getElementById("mensaje");
+    function mostrarMensaje(texto) {
+      mensajeDiv.innerText = texto;
+      setTimeout(() => {
+        mensajeDiv.innerText = "✨ Atrapa las palabras bonitas ✨";
+      }, 2000);
     }
 
-    // Crear las 1000 frases distribuidas en esfera (galaxia)
-    todas.forEach((frase, i) => {
-      const color = colores[Math.floor(Math.random()*colores.length)];
-      const material = crearTexto(frase, color);
-      const sprite = new THREE.Sprite(material);
-
-      // Distribución en esfera tipo galaxia
-      const radius = 700;
-      const phi = Math.acos(-1 + (2 * i) / todas.length);
-      const theta = Math.sqrt(todas.length * Math.PI) * phi;
-      sprite.position.x = radius * Math.cos(theta) * Math.sin(phi);
-      sprite.position.y = radius * Math.sin(theta) * Math.sin(phi);
-      sprite.position.z = radius * Math.cos(phi);
-
-      sprite.scale.set(80, 40, 1);
-      scene.add(sprite);
+    // Movimiento con mouse o touch
+    document.addEventListener("mousemove", e => {
+      corazon.x = e.clientX;
+      corazon.y = e.clientY;
+    });
+    document.addEventListener("touchmove", e => {
+      corazon.x = e.touches[0].clientX;
+      corazon.y = e.touches[0].clientY;
     });
 
-    // Animación
-    function animate(){
-      requestAnimationFrame(animate);
-      scene.rotation.y += 0.0008; // rotación lenta
-      renderer.render(scene, camera);
-      controls.update();
-    }
-    animate();
+    // Bucle de juego
+    function animar() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    window.addEventListener("resize", ()=>{
-      camera.aspect = window.innerWidth/window.innerHeight;
-      camera.updateProjectionMatrix();
-      renderer.setSize(window.innerWidth, window.innerHeight);
+      // Dibujar palabras
+      ctx.fillStyle = "white";
+      ctx.font = "20px Arial";
+      for (let i = 0; i < palabras.length; i++) {
+        let p = palabras[i];
+        ctx.fillText(p.texto, p.x, p.y);
+
+        // Mover
+        p.x += p.dx;
+        p.y += p.dy;
+
+        // Rebotar en bordes
+        if (p.x < 0 || p.x > canvas.width - 50) p.dx *= -1;
+        if (p.y < 20 || p.y > canvas.height - 20) p.dy *= -1;
+
+        // Colisión con el corazón
+        const dist = Math.hypot(corazon.x - p.x, corazon.y - p.y);
+        if (dist < 50) {
+          mostrarMensaje(p.texto);
+          palabras.splice(i, 1);
+          i--;
+          // Añadir nueva palabra
+          palabras.push({
+            texto: frases[Math.floor(Math.random() * frases.length)],
+            x: Math.random() * canvas.width,
+            y: Math.random() * canvas.height,
+            dx: (Math.random() - 0.5) * 2,
+            dy: (Math.random() - 0.5) * 2
+          });
+        }
+      }
+
+      // Dibujar corazón
+      dibujarCorazon(corazon.x, corazon.y, corazon.size);
+
+      requestAnimationFrame(animar);
+    }
+    animar();
+
+    window.addEventListener("resize", () => {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
     });
   </script>
 </body>
