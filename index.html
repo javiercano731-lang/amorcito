@@ -12,21 +12,18 @@
   <script src="https://cdn.jsdelivr.net/npm/three@0.152.2/build/three.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/three@0.152.2/examples/js/controls/OrbitControls.js"></script>
   <script>
-    // Palabras/frases románticas 💕
+    // Frases románticas 💕 (ponemos varias y luego se repiten hasta llegar a 1000)
     const frases = [
-      "Mi estrella 🌟","Eres mi universo 💕","Mi razón de sonreír 😊","Siempre tú 💫",
-      "Mi vida 🌹","Mi sol ☀️","Mi tesoro 💎","Eres mi todo 💖","Mi alegría 🥰",
-      "Mi reina 👑","Mi princesa 👸","Mi ternura 🍯","Mi cielo 🌌","Te adoro 💕",
-      "Mi futuro 💍","Mi lugar seguro 🏡","Mi corazón late por ti ❤️","Eres mi sueño cumplido ✨",
-      "Eres mi inspiración 🎶","Mi luz en la oscuridad 🔦","Mi destino 💫","Mi poesía 📖",
-      "Mi ángel 😇","Mi mar 🌊","Mi melodía 🎼","Mi fortuna 🍀","Eres mi fuerza 💪",
+      "Mi estrella 🌟","Eres mi universo 💕","Mi razón de sonreír 😊",
+      "Siempre tú 💫","Mi vida 🌹","Mi sol ☀️","Mi tesoro 💎","Eres mi todo 💖",
+      "Mi alegría 🥰","Mi reina 👑","Mi princesa 👸","Mi ternura 🍯",
+      "Mi cielo 🌌","Te adoro 💕","Mi futuro 💍","Mi lugar seguro 🏡",
+      "Mi corazón ❤️","Mi sueño ✨","Mi poesía 📖","Mi ángel 😇","Mi fortuna 🍀",
       "Mi ilusión 🌈","Mi calma 🍃","Mi deseo 🔥","Mi aventura 🚀","Mi paz 🕊️",
-      "Mi magia 🪄","Mi regalo 🎁","Mi sonrisa favorita 😍","Mi refugio 🛡️","Mi razón de vivir 🌹",
-      "Mi alma gemela 💞","Mi guía 🌟","Mi mejor abrazo 🤗","Mi motor de vida 🚗"
-      // 👉 puedes agregar hasta 200 aquí si quieres, se repetirán hasta 1000
+      "Mi magia 🪄","Mi regalo 🎁","Mi sonrisa favorita 😍","Mi refugio 🛡️"
     ];
 
-    // Repetimos hasta llegar a 1000
+    // Repetimos hasta 1000 frases
     let todas = [];
     for (let i=0; i<1000; i++) {
       todas.push(frases[i % frases.length]);
@@ -34,57 +31,64 @@
 
     // Escena
     const scene = new THREE.Scene();
-    const camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 2000);
-    camera.position.z = 400;
+    const camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 5000);
+    camera.position.z = 800;
 
     const renderer = new THREE.WebGLRenderer({antialias:true});
     renderer.setSize(window.innerWidth, window.innerHeight);
     document.body.appendChild(renderer.domElement);
 
     const controls = new THREE.OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true;
 
     // Colores de galaxia
-    const colores = [0xff69b4, 0x9370db, 0x87cefa, 0xffffff]; // rosa, morado, azul, blanco
+    const colores = ["#ff69b4","#9370db","#87cefa","#ffffff"]; // rosa, morado, azul, blanco
 
-    // Fuente
-    const loader = new THREE.FontLoader();
-    loader.load("https://threejs.org/examples/fonts/helvetiker_regular.typeface.json", function(font) {
-      todas.forEach((frase, i) => {
-        const geometry = new THREE.TextGeometry(frase, {
-          font: font,
-          size: 8,
-          height: 1
-        });
-        const material = new THREE.MeshBasicMaterial({
-          color: colores[Math.floor(Math.random() * colores.length)]
-        });
-        const mesh = new THREE.Mesh(geometry, material);
+    // Función para crear textura de texto
+    function crearTexto(texto, color="#fff") {
+      const canvas = document.createElement("canvas");
+      const ctx = canvas.getContext("2d");
+      ctx.font = "32px Arial";
+      const w = ctx.measureText(texto).width + 20;
+      const h = 40;
+      canvas.width = w;
+      canvas.height = h;
+      ctx.font = "32px Arial";
+      ctx.fillStyle = color;
+      ctx.fillText(texto, 10, 30);
+      const tex = new THREE.CanvasTexture(canvas);
+      return new THREE.SpriteMaterial({map: tex, transparent:true});
+    }
 
-        // Distribuir en esfera
-        const radius = 300;
-        const phi = Math.acos(-1 + (2 * i) / todas.length);
-        const theta = Math.sqrt(todas.length * Math.PI) * phi;
+    // Crear las 1000 frases distribuidas en esfera (galaxia)
+    todas.forEach((frase, i) => {
+      const color = colores[Math.floor(Math.random()*colores.length)];
+      const material = crearTexto(frase, color);
+      const sprite = new THREE.Sprite(material);
 
-        mesh.position.x = radius * Math.cos(theta) * Math.sin(phi);
-        mesh.position.y = radius * Math.sin(theta) * Math.sin(phi);
-        mesh.position.z = radius * Math.cos(phi);
+      // Distribución en esfera tipo galaxia
+      const radius = 700;
+      const phi = Math.acos(-1 + (2 * i) / todas.length);
+      const theta = Math.sqrt(todas.length * Math.PI) * phi;
+      sprite.position.x = radius * Math.cos(theta) * Math.sin(phi);
+      sprite.position.y = radius * Math.sin(theta) * Math.sin(phi);
+      sprite.position.z = radius * Math.cos(phi);
 
-        mesh.rotation.y = Math.random() * Math.PI;
-        scene.add(mesh);
-      });
+      sprite.scale.set(80, 40, 1);
+      scene.add(sprite);
     });
 
     // Animación
-    function animate() {
+    function animate(){
       requestAnimationFrame(animate);
-      scene.rotation.y += 0.001; // rotación lenta
-      scene.rotation.x += 0.0003; // ligera inclinación
+      scene.rotation.y += 0.0008; // rotación lenta
       renderer.render(scene, camera);
+      controls.update();
     }
     animate();
 
-    window.addEventListener('resize', () => {
-      camera.aspect = window.innerWidth / window.innerHeight;
+    window.addEventListener("resize", ()=>{
+      camera.aspect = window.innerWidth/window.innerHeight;
       camera.updateProjectionMatrix();
       renderer.setSize(window.innerWidth, window.innerHeight);
     });
